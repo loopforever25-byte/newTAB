@@ -393,14 +393,20 @@
       $('lyrics').textContent = 'Masukkan token Spotify di Pengaturan (✏️) lalu tekan Simpan token untuk menampilkan Now Playing & lirik.';
     }
 
-    //token
-    $('getTokenBtn').addEventListener('click', ()=>{
-      const clientId = '1d14355060544035b2be9f4e9e7ebec8'; // ganti dengan Client ID-mu
-      const redirectUri = "https://loopforever25-byte.github.io/newTAB/"; // redirect ke halaman new tab ini
-      const scopes = 'user-read-currently-playing user-read-playback-state';
-      const url = `https://accounts.spotify.com/authorize?response_type=token&client_id=${clientId}&scope=${encodeURIComponent(scopes)}&redirect_uri=${encodeURIComponent(redirectUri)}`;
-      window.open(url,'_blank');
+    $('getTokenBtn').addEventListener('click', () => {
+      const clientId = '1d14355060544035b2be9f4e9e7ebec8'; // Client ID Spotify kamu
+      const redirectUri = window.location.origin + window.location.pathname; // otomatis sesuai GitHub Pages
+      const scopes = [
+        'user-read-currently-playing',
+        'user-read-playback-state'
+      ];
+
+      // URL login ke Spotify
+      const authUrl = `https://accounts.spotify.com/authorize?client_id=${clientId}&response_type=token&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${scopes.join('%20')}`;
+
+      window.open(authUrl, '_blank'); // buka tab baru untuk login Spotify
     });
+
 
     // jika halaman di-load dan ada access_token di URL, simpan ke localStorage
     window.addEventListener('load', ()=>{
