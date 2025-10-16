@@ -1,0 +1,422 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>New Tab — Custom (Spotify + Lyrics)</title>
+  <style>
+    :root{
+      --bg-grad: linear-gradient(135deg,#0f1724,#24121f);
+      --glass: rgba(255,255,255,0.04);
+      --glass-2: rgba(255,255,255,0.02);
+      --accent: rgba(255,255,255,0.9);
+      --muted: rgba(255,255,255,0.6);
+      --radius: 12px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;font-family:Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Arial}
+    body{
+      background: var(--bg-grad);
+      background-size:cover;background-position:center;
+      color:var(--accent);
+      padding:28px;
+      display:flex;align-items:center;justify-content:center;
+    }
+
+    .wrap{width:100%;max-width:1100px;display:flex;gap:20px}
+    .left {
+      flex:1;
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      border-radius:14px;padding:22px;backdrop-filter: blur(6px);
+      box-shadow: 0 8px 30px rgba(0,0,0,0.5);
+      min-height:300px;position:relative;
+    }
+    .right {
+      width:360px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      border-radius:14px;padding:18px;backdrop-filter: blur(6px);
+      box-shadow: 0 8px 30px rgba(0,0,0,0.45);
+      display:flex;flex-direction:column;gap:12px;
+      min-height:300px;
+    }
+
+    /* top-right pencil */
+    .btn-edit {
+      position:absolute;right:14px;top:14px;width:36px;height:36px;border-radius:10px;
+      background:var(--glass);display:flex;align-items:center;justify-content:center;border:0;cursor:pointer;
+    }
+
+    .clock{font-size:44px;font-weight:600}
+    .date{color:var(--muted);margin-top:6px}
+    .greet{margin-top:12px;color:var(--muted)}
+
+    .search {margin-top:18px;display:flex;gap:10px}
+    .search input{flex:1;padding:12px 14px;border-radius:10px;border:0;background:rgba(255,255,255,0.03);color:var(--accent);outline:none}
+    .search button{padding:12px 14px;border-radius:10px;border:0;background:var(--glass);cursor:pointer}
+
+    .shortcuts {margin-top:14px;display:flex;flex-wrap:wrap;gap:8px}
+    .shortcut {background:rgba(255,255,255,0.03);padding:8px 12px;border-radius:10px;font-size:14px;cursor:grab}
+
+    .add-short {display:flex;gap:8px;margin-top:10px}
+    .add-short input{padding:8px;border-radius:8px;border:0;background:rgba(255,255,255,0.02);color:var(--accent);flex:1}
+
+    /* Spotify panel minimalis */
+    .sp-top{display:flex;gap:12px;align-items:center}
+    .art{width:64px;height:64px;border-radius:8px;background:linear-gradient(180deg, rgba(0,0,0,0.2), rgba(0,0,0,0.4));display:flex;align-items:center;justify-content:center;overflow:hidden}
+    .meta{flex:1}
+    .title{font-weight:600}
+    .artist{color:var(--muted);margin-top:4px;font-size:14px}
+    .lyrics{
+      margin-top:8px;padding:10px;border-radius:10px;background:rgba(0,0,0,0.12);max-height:200px;overflow:auto;color:var(--accent);
+      font-size:14px;white-space:pre-wrap;
+    }
+    .sp-footer{margin-top:auto;color:var(--muted);font-size:13px;text-align:center}
+
+    /* settings drawer */
+    .drawer {
+      position:fixed;right:24px;top:24px;width:360px;background:rgba(0,0,0,0.7);border-radius:12px;padding:12px;backdrop-filter: blur(6px);
+      box-shadow:0 12px 40px rgba(0,0,0,0.6);display:none;flex-direction:column;gap:10px;z-index:40;
+    }
+    .drawer.show{display:flex}
+    .drawer label{font-size:13px;color:var(--muted)}
+    .drawer input[type=text], .drawer input[type=password] {width:100%;padding:8px;border-radius:8px;border:0;background:rgba(255,255,255,0.03);color:var(--accent)}
+    .drawer .row{display:flex;gap:8px}
+    .drawer button{padding:8px;border-radius:8px;border:0;background:var(--glass);cursor:pointer}
+
+    footer{margin-top:14px;color:var(--muted);font-size:13px;text-align:left}
+
+    @media(max-width:980px){
+      .wrap{flex-direction:column}
+      .right{width:100%}
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="left">
+      <button class="btn-edit" id="editBtn" title="Edit background & token">
+        ✏️
+      </button>
+
+      <div class="clock" id="clock">--:--</div>
+      <div class="date" id="date">—</div>
+      <div class="greet" id="greet">Halo — semoga harimu menyenangkan!</div>
+
+      <div class="search">
+        <input id="searchInput" placeholder="Search the web or type a URL..." />
+        <button id="searchBtn">Go</button>
+      </div>
+
+      <div class="shortcuts" id="shortcuts"></div>
+
+      <div class="add-short">
+        <input id="newLabel" placeholder="Label (YouTube)" />
+        <input id="newUrl" placeholder="https://..." />
+        <button id="addBtn">Add</button>
+      </div>
+
+      <footer>
+        Tip: Klik kanan shortcut untuk edit/hapus. Tekan Ctrl/Cmd+F untuk fokus pencarian.
+      </footer>
+    </div>
+
+    <div class="right">
+      <div class="sp-top">
+        <div class="art" id="albumArt">
+          <img id="albumImg" src="" alt="" style="width:100%;height:100%;object-fit:cover;display:none">
+          <div id="noArt" style="color:var(--muted);font-size:12px">No art</div>
+        </div>
+        <div class="meta">
+          <div class="title" id="trackTitle">Tidak ada lagu</div>
+          <div class="artist" id="trackArtist">—</div>
+        </div>
+      </div>
+
+      <div class="lyrics" id="lyrics">Lirik akan tampil di sini ketika lagu ditemukan.</div>
+
+      <div class="sp-footer" id="spStatus">Spotify: token belum diisi</div>
+    </div>
+  </div>
+
+  <!-- settings drawer -->
+  <div class="drawer" id="drawer">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <strong style="color:var(--accent)">Pengaturan</strong>
+      <button id="closeDraw">✖</button>
+    </div>
+
+    <div>
+      <label>Background image URL (kosong = gradient)</label>
+      <input id="bgUrl" type="text" placeholder="https://..." />
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button id="applyBg">Apply</button>
+        <button id="resetBg">Reset</button>
+      </div>
+    </div>
+
+    <div>
+      <label>Spotify Access Token</label>
+      <input id="spotifyToken" type="password" placeholder="Masukkan token akses Spotify (Bearer token)" />
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button id="saveToken">Simpan token</button>
+        <button id="clearToken">Hapus token</button>
+      </div>
+      <small style="color:var(--muted);display:block;margin-top:6px">Token disimpan di browser (localStorage). Jangan bagikan tokenmu.</small>
+    </div>
+
+    <div>
+      <label>Search engine</label>
+      <select id="engineSelect" style="padding:8px;border-radius:8px;border:0;background:rgba(255,255,255,0.03);color:var(--accent);width:100%">
+        <option value="https://www.google.com/search?q=">Google</option>
+        <option value="https://duckduckgo.com/?q=">DuckDuckGo</option>
+        <option value="https://www.bing.com/search?q=">Bing</option>
+      </select>
+    </div>
+    <!-- di drawer ✏️ -->
+    <button id="getTokenBtn">🎧 Get Token</button>
+  </div>
+
+  <script>
+    // ---------- Utilities ----------
+    const $ = id => document.getElementById(id);
+
+    // ---------- Clock ----------
+    function updateClock(){
+      const now = new Date();
+      const hh = String(now.getHours()).padStart(2,'0');
+      const mm = String(now.getMinutes()).padStart(2,'0');
+      $('clock').textContent = `${hh}:${mm}`;
+      $('date').textContent = now.toLocaleDateString(undefined, {weekday:'long', year:'numeric', month:'short', day:'numeric'});
+      const hour = now.getHours();
+      let greet = 'Halo';
+      if(hour<12) greet = 'Selamat pagi';
+      else if(hour<15) greet = 'Selamat siang';
+      else if(hour<18) greet = 'Selamat sore';
+      else greet = 'Selamat malam';
+      $('greet').textContent = `${greet} — semoga harimu menyenangkan!`;
+    }
+    updateClock(); setInterval(updateClock, 1000*30);
+
+    // ---------- Search ----------
+    function doSearch(){
+      const q = $('searchInput').value.trim();
+      if(!q) return;
+      const engine = localStorage.getItem('engine') || $('engineSelect').value;
+      const isUrl = /^(https?:\/\/)/i.test(q) || /^[\w-]+\.[\w.-]+/.test(q);
+      if(isUrl){
+        let url = q;
+        if(!/^https?:\/\//i.test(url)) url = 'https://' + url;
+        window.open(url, '_self');
+      } else {
+        window.open(engine + encodeURIComponent(q), '_self');
+      }
+    }
+    $('searchBtn').addEventListener('click', doSearch);
+    $('searchInput').addEventListener('keydown', e=>{ if(e.key==='Enter') doSearch(); });
+    $('engineSelect').addEventListener('change', ()=> localStorage.setItem('engine', $('engineSelect').value));
+    const savedEngine = localStorage.getItem('engine'); if(savedEngine) $('engineSelect').value = savedEngine;
+
+    // ---------- Shortcuts ----------
+    function loadShortcuts(){
+      const raw = localStorage.getItem('shortcuts');
+      let arr = [];
+      try{ arr = raw ? JSON.parse(raw) : [] }catch(e){ arr = [] }
+      const container = $('shortcuts'); container.innerHTML = '';
+      arr.forEach((s, idx) => {
+        const el = document.createElement('div'); el.className = 'shortcut'; el.textContent = s.label; el.title = s.url;
+        el.addEventListener('click', ()=> window.open(s.url, '_self'));
+        el.addEventListener('contextmenu', (ev)=>{
+          ev.preventDefault();
+          const a = prompt('Edit label (leave empty to delete):', s.label);
+          if(a === null) return;
+          if(a === '') { arr.splice(idx,1); saveShortcuts(arr); loadShortcuts(); return; }
+          const b = prompt('Edit URL:', s.url);
+          if(b === null) return;
+          arr[idx] = {label: a, url: b};
+          saveShortcuts(arr); loadShortcuts();
+        });
+        container.appendChild(el);
+      });
+    }
+    function saveShortcuts(arr){ localStorage.setItem('shortcuts', JSON.stringify(arr)); }
+    $('addBtn').addEventListener('click', ()=>{
+      const label = $('newLabel').value.trim(); const url = $('newUrl').value.trim();
+      if(!label || !url){ alert('Isi label dan URL'); return; }
+      let arr = [];
+      try{ arr = JSON.parse(localStorage.getItem('shortcuts')) || [] }catch(e){ arr = [] }
+      let finalUrl = url; if(!/^https?:\/\//i.test(finalUrl)) finalUrl = 'https://' + finalUrl;
+      arr.push({label, url: finalUrl}); saveShortcuts(arr); $('newLabel').value=''; $('newUrl').value=''; loadShortcuts();
+    });
+    if(!localStorage.getItem('shortcuts')){
+      const defaults = [
+        {label:'YouTube', url:'https://youtube.com'},
+        {label:'Gmail', url:'https://mail.google.com'},
+        {label:'Drive', url:'https://drive.google.com'},
+        {label:'GitHub', url:'https://github.com'}
+      ];
+      saveShortcuts(defaults);
+    }
+    loadShortcuts();
+
+    // ---------- Background ----------
+    function applyBg(url){
+      if(url){
+        document.body.style.background = `url(${url}) center/cover no-repeat`;
+      } else {
+        document.body.style.background = getComputedStyle(document.documentElement).getPropertyValue('--bg-grad');
+      }
+    }
+    $('applyBg').addEventListener('click', ()=>{
+      const val = $('bgUrl').value.trim();
+      if(!val){ alert('Masukkan URL gambar atau tekan Reset'); return; }
+      localStorage.setItem('bgUrl', val); applyBg(val);
+    });
+    $('resetBg').addEventListener('click', ()=>{ localStorage.removeItem('bgUrl'); $('bgUrl').value=''; applyBg(null); });
+    const savedBg = localStorage.getItem('bgUrl'); if(savedBg){ $('bgUrl').value = savedBg; applyBg(savedBg); }
+
+    // ---------- Drawer (edit) ----------
+    const drawer = $('drawer');
+    $('editBtn').addEventListener('click', ()=> drawer.classList.toggle('show'));
+    $('closeDraw').addEventListener('click', ()=> drawer.classList.remove('show'));
+
+    // ---------- Spotify token handling ----------
+    const spStatus = $('spStatus');
+    function saveTokenToStorage(val){
+      if(val) localStorage.setItem('spotifyToken', val);
+      else localStorage.removeItem('spotifyToken');
+      updateTokenUI();
+    }
+    function updateTokenUI(){
+      const t = localStorage.getItem('spotifyToken');
+      $('spotifyToken').value = t || '';
+      spStatus.textContent = t ? 'Spotify: token terisi' : 'Spotify: token belum diisi';
+    }
+    $('saveToken').addEventListener('click', ()=> {
+      const v = $('spotifyToken').value.trim();
+      if(!v){ alert('Masukkan token'); return; }
+      saveTokenToStorage(v);
+      alert('Token disimpan di browser (localStorage).');
+    });
+    $('clearToken').addEventListener('click', ()=> {
+      if(confirm('Hapus token dari browser?')){ saveTokenToStorage(null); alert('Token dihapus'); }
+    });
+    updateTokenUI();
+
+    // ---------- Spotify + Lyrics ----------
+    // Poll currently playing every X seconds
+    let pollInterval = 8000; // 8s
+    let pollTimer = null;
+
+    async function fetchCurrentlyPlaying(){
+      const token = localStorage.getItem('spotifyToken');
+      if(!token){ showNoTrack('Token Spotify kosong'); return; }
+      try {
+        const res = await fetch('https://api.spotify.com/v1/me/player/currently-playing', {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        if(res.status === 204){ showNoTrack('Tidak ada lagu yang sedang diputar'); return; }
+        if(res.status === 401 || res.status === 403){ showNoTrack('Token tidak valid atau expired'); return; }
+        if(!res.ok){ showNoTrack('Gagal mengambil data Spotify ('+res.status+')'); return; }
+        const data = await res.json();
+        // parse item
+        if(!data || !data.item){ showNoTrack('Tidak ada lagu'); return; }
+        const item = data.item;
+        const title = item.name || '—';
+        const artists = (item.artists||[]).map(a=>a.name).join(', ');
+        const albumArt = item.album && item.album.images && item.album.images[0] ? item.album.images[0].url : '';
+        renderTrack({title, artists, albumArt});
+        // fetch lyrics from lyrics.ovh
+        fetchLyrics(artists.split(',')[0].trim(), title);
+      } catch (err){
+        console.error(err);
+        showNoTrack('Error mengambil Spotify');
+      }
+    }
+
+    function renderTrack({title, artists, albumArt}){
+      $('trackTitle').textContent = title;
+      $('trackArtist').textContent = artists;
+      if(albumArt){
+        $('albumImg').src = albumArt; $('albumImg').style.display = 'block'; $('noArt').style.display='none';
+      } else {
+        $('albumImg').style.display='none'; $('noArt').style.display='block';
+      }
+    }
+
+    function showNoTrack(msg){
+      $('trackTitle').textContent = 'Tidak ada lagu';
+      $('trackArtist').textContent = '—';
+      $('albumImg').style.display='none'; $('noArt').style.display='block';
+      $('lyrics').textContent = msg || '—';
+    }
+
+    async function fetchLyrics(artist, title){
+      if(!artist || !title) { $('lyrics').textContent = 'Tidak cukup data untuk mencari lirik.'; return; }
+      $('lyrics').textContent = 'Mencari lirik...';
+      try {
+        // lyrics.ovh
+        const endpoint = `https://api.lyrics.ovh/v1/${encodeURIComponent(artist)}/${encodeURIComponent(title)}`;
+        const r = await fetch(endpoint);
+        if(!r.ok){ $('lyrics').textContent = 'Lirik tidak ditemukan.'; return; }
+        const data = await r.json();
+        if(data && data.lyrics) $('lyrics').textContent = data.lyrics;
+        else $('lyrics').textContent = 'Lirik tidak ditemukan.';
+      } catch (e){
+        console.error(e);
+        $('lyrics').textContent = 'Gagal mengambil lirik.';
+      }
+    }
+
+    function startPolling(){
+      if(pollTimer) clearInterval(pollTimer);
+      fetchCurrentlyPlaying();
+      pollTimer = setInterval(fetchCurrentlyPlaying, pollInterval);
+    }
+
+    // start if token present
+    if(localStorage.getItem('spotifyToken')) startPolling();
+
+    // If user updates token, restart polling
+    window.addEventListener('storage', (e)=>{ if(e.key === 'spotifyToken') { updateTokenUI(); startPolling(); } });
+
+    // manual start when user saves token
+    $('saveToken').addEventListener('click', ()=> {
+      if(localStorage.getItem('spotifyToken')) startPolling();
+    });
+
+    // ---------- initialize ----------
+    // focus search
+    window.addEventListener('keydown', e=>{ if(e.key==='f' && (e.ctrlKey||e.metaKey)){ e.preventDefault(); $('searchInput').focus(); $('searchInput').select(); } });
+
+    // polite initial message
+    if(!localStorage.getItem('spotifyToken')) {
+      $('lyrics').textContent = 'Masukkan token Spotify di Pengaturan (✏️) lalu tekan Simpan token untuk menampilkan Now Playing & lirik.';
+    }
+
+    //token
+    $('getTokenBtn').addEventListener('click', ()=>{
+      const clientId = '1d14355060544035b2be9f4e9e7ebec8'; // ganti dengan Client ID-mu
+      const redirectUri = "http://127.0.0.1:5500/newTab.html"; // redirect ke halaman new tab ini
+      const scopes = 'user-read-currently-playing user-read-playback-state';
+      const url = `https://accounts.spotify.com/authorize?response_type=token&client_id=${clientId}&scope=${encodeURIComponent(scopes)}&redirect_uri=${encodeURIComponent(redirectUri)}`;
+      window.open(url,'_blank');
+    });
+
+    // jika halaman di-load dan ada access_token di URL, simpan ke localStorage
+    window.addEventListener('load', ()=>{
+      const hash = window.location.hash;
+      if(hash.includes('access_token')){
+        const params = new URLSearchParams(hash.slice(1));
+        const token = params.get('access_token');
+        if(token){
+          localStorage.setItem('spotifyToken', token);
+          alert('Token Spotify berhasil disimpan!');
+          // optional: hapus hash supaya URL bersih
+          history.replaceState(null, null, ' ');
+          startPolling(); // mulai polling lagu sekarang
+        }
+      }
+    });
+  </script>
+</body>
+</html>
