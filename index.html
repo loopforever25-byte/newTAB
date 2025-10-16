@@ -396,7 +396,7 @@
     //token
     $('getTokenBtn').addEventListener('click', ()=>{
       const clientId = '1d14355060544035b2be9f4e9e7ebec8'; // ganti dengan Client ID-mu
-      const redirectUri = "http://127.0.0.1:5500/newTab.html"; // redirect ke halaman new tab ini
+      const redirectUri = "https://loopforever25-byte.github.io/newTAB/"; // redirect ke halaman new tab ini
       const scopes = 'user-read-currently-playing user-read-playback-state';
       const url = `https://accounts.spotify.com/authorize?response_type=token&client_id=${clientId}&scope=${encodeURIComponent(scopes)}&redirect_uri=${encodeURIComponent(redirectUri)}`;
       window.open(url,'_blank');
